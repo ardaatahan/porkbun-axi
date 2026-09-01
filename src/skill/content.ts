@@ -16,8 +16,7 @@ export function collapseHome(path: string): string {
 }
 
 /**
- * Shared body of the home view; `tool` is how commands are written
- * ("porkbun-axi" live, "npx -y porkbun-axi" in the static skill).
+ * Shared body of the home view; `tool` is how commands are written.
  *
  * The home view is intentionally credential-free so discovery never triggers
  * a network call and credentials are never needed merely to inspect the CLI.
@@ -78,7 +77,7 @@ export function rootHelpText(): string {
   ].join("\n");
 }
 
-/** The static SKILL.md: home content with zero-install command forms. */
+/** The static SKILL.md: home content with checkout-based command forms. */
 export function renderSkill(): string {
   const frontmatter = [
     "---",
@@ -89,10 +88,10 @@ export function renderSkill(): string {
   const body = [
     "# porkbun-axi",
     "",
-    `${DESCRIPTION} (built against AXI spec ${SPEC_VERSION}). Run the commands below with npx - no install needed.`,
+    `${DESCRIPTION} (built against AXI spec ${SPEC_VERSION}). Install from a checkout of this repository (\`npm install && npm run build && npm link\`), then run the \`porkbun-axi\` commands below. Without linking, \`node bin/porkbun-axi.js\` from the checkout takes the same arguments.`,
     "",
     "```",
-    homeBody("npx -y porkbun-axi"),
+    homeBody("porkbun-axi"),
     "```",
     "",
     "Every command supports `--help`. Exit codes: 0 success/no-op, 1 error, 2 usage error. All output is TOON on stdout.",

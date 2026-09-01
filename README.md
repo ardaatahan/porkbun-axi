@@ -84,16 +84,18 @@ porkbun-axi dns create example.com --type CNAME --name docs --content docs.examp
 porkbun-axi dns create example.com --type MX --content mail.example.com --priority 10
 porkbun-axi dns create example.com --type TXT --name _verify --content verification-value --notes onboarding
 
-# Preview a record replacement, then explicitly confirm it
+# Preview a record replacement, then explicitly confirm it.
+# dns update always requires --name; use --name '' to target the zone apex.
 porkbun-axi dns update example.com 123456 --type A --name www --content 192.0.2.2 --ttl 600
 porkbun-axi dns update example.com 123456 --type A --name www --content 192.0.2.2 --ttl 600 --confirm
+porkbun-axi dns update example.com 123456 --type A --name '' --content 192.0.2.2 --confirm
 
 # Preview the exact deletion, then explicitly confirm it
 porkbun-axi dns delete example.com 123456
 porkbun-axi dns delete example.com 123456 --confirm
 ```
 
-Create prints the record change before sending it. Update and delete print the exact target and never mutate Porkbun unless `--confirm` is supplied.
+Create prints the record change before sending it. Update and delete print the exact target and never mutate Porkbun unless `--confirm` is supplied. `dns update` refuses to run without `--name` so an omitted subdomain can never silently retarget a record to the zone apex; pass the record's subdomain, or `--name ''` when the apex is the intended target.
 
 ### URL forwarding
 

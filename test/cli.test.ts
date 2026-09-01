@@ -105,6 +105,32 @@ describe("all Porkbun commands", () => {
     expect(String(observed?.body)).not.toContain("secret-test-key");
   });
 
+  it("registers with the quoted price converted to cents and terms agreement", async () => {
+    const calls: Array<[string, RequestInit | undefined]> = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input); calls.push([url, init]); return response(successPayload(url));
+    }));
+    expect(await dispatch(registry, ["domains", "register", "example.com", "--confirm"])).toBe(0);
+    const create = calls.find(([url]) => url.endsWith("/domain/create/example.com"));
+    const body = JSON.parse(String(create?.[1]?.body));
+    expect(body.cost).toBe(973);
+    expect(body.agreeToTerms).toBe("yes");
+  });
+
+  it("refuses unavailable domains before suggesting --confirm", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ status: "SUCCESS", response: { avail: "no", price: "9.73", premium: "no" } })));
+    expect(await dispatch(registry, ["domains", "register", "example.com"])).toBe(2);
+    expect(stdout).toContain("not available for registration");
+    expect(stdout).not.toContain("rerun with --confirm");
+  });
+
+  it("refuses dns update without an explicit --name", async () => {
+    const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+    expect(await dispatch(registry, ["dns", "update", "example.com", "7", "--type", "A", "--content", "192.0.2.2", "--confirm"])).toBe(2);
+    expect(stdout).toContain("--name ''");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("reports missing credentials before making a request", async () => {
     delete process.env.PORKBUN_API_KEY;
     const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
@@ -117,7 +143,8 @@ describe("all Porkbun commands", () => {
     const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
     for (const argv of [
       ["dns", "create", "example.com", "--content", "x"],
-      ["dns", "update", "example.com", "7", "--type", "A"],
+      ["dns", "update", "example.com", "7", "--type", "A", "--name", "www"],
+      ["dns", "update", "example.com", "7", "--type", "A", "--content", "192.0.2.2"],
       ["forwarding", "create", "example.com"],
       ["nameservers", "set", "example.com", "--servers", "ns1.example.net"],
       ["glue", "create", "example.com", "ns1"],
@@ -133,7 +160,7 @@ describe("all Porkbun commands", () => {
 describe("confirmation gates", () => {
   const gates = [
     { argv: ["dns", "delete", "example.com", "7"], calls: 0, change: "delete DNS record" },
-    { argv: ["dns", "update", "example.com", "7", "--type", "A", "--content", "192.0.2.2"], calls: 0, change: "replace DNS record" },
+    { argv: ["dns", "update", "example.com", "7", "--type", "A", "--name", "www", "--content", "192.0.2.2"], calls: 0, change: "replace DNS record" },
     { argv: ["forwarding", "delete", "example.com", "9"], calls: 0, change: "delete URL forward" },
     { argv: ["nameservers", "set", "example.com", "--servers", "ns1.example.net,ns2.example.net"], calls: 0, change: "replace all nameservers" },
     { argv: ["glue", "delete", "example.com", "ns1"], calls: 0, change: "delete glue" },

@@ -17,4 +17,4 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npm test
       - run: npm run skill:check
-      - run: npx -y axi-axi validate "node bin/porkbun-axi.js" --dir . --timeout 30000
+      - run: npx -y axi-axi validate "node bin/porkbun-axi.js" --dir . --strict --timeout 30000

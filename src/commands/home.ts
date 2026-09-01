@@ -1,6 +1,9 @@
+import { createRequire } from "node:module";
 import type { CommandModule } from "../cli/router.js";
 import { print } from "../output/toon.js";
 import { renderHome, rootHelpText } from "../skill/content.js";
+
+const { version } = createRequire(import.meta.url)("../../package.json") as { version: string };
 
 export const homeCommand: CommandModule = {
   spec: {
@@ -13,7 +16,7 @@ export const homeCommand: CommandModule = {
   },
   run(parsed) {
     if (parsed.flags["version"]) {
-      print("porkbun-axi: 0.1.0");
+      print(`porkbun-axi: ${version}`);
       return 0;
     }
     print(renderHome(process.argv[1] ?? "porkbun-axi"));

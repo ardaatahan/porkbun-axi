@@ -12,7 +12,7 @@ const confirmFlag: FlagSpec = { name: "confirm", type: "boolean", description: "
 function stable(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stable);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value as Data).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, stable(v)]));
+    return Object.fromEntries(Object.entries(value as Data).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([k, v]) => [k, stable(v)]));
   }
   return value;
 }
@@ -85,9 +85,9 @@ export const domainsRegister = command("domains register", "Register a domain af
   const detail = quote.response as Data;
   const price = String(detail?.price ?? "unknown");
   print(emitKV([["domain", domain], ["availability", detail?.avail ?? "unknown"], ["price_usd", price], ["premium", detail?.premium ?? "unknown"]]));
-  if (!p.flags.confirm) throw new UsageError("registration confirmation required", "verify availability and price above, accept Porkbun terms, then rerun with --confirm");
   if (detail?.avail !== "yes" && detail?.avail !== "available") throw new UsageError(`${domain} is not available for registration`);
   if (detail?.premium === "yes" || detail?.premium === true) throw new UsageError(`${domain} is a premium domain and cannot be registered through the Porkbun API`);
+  if (!p.flags.confirm) throw new UsageError("registration confirmation required", "verify availability and price above, accept Porkbun terms, then rerun with --confirm");
   const cents = Math.round(Number(price) * 100);
   if (!Number.isFinite(cents)) throw new UsageError("Porkbun did not return a usable registration price", "retry domains check before registering");
   const body: Data = { cost: cents, agreeToTerms: "yes" };
@@ -126,7 +126,8 @@ export const dnsCreate = command("dns create", "Create a DNS record", [["domain"
   print(`change: create ${body.type} record '${body.name || "@"}' on ${p.positionals[0]} -> ${body.content}`);
   output(await request<Data>(`/dns/create/${encodePath(p.positionals[0]!)}`, { method: "POST", body, idempotent: true }), p);
 });
-export const dnsUpdate = command("dns update", "Replace a DNS record by ID", [["domain", "domain name"], ["id", "record ID"]], [...recordFlags, confirmFlag], ["porkbun-axi dns update example.com 123 --type A --name www --content 192.0.2.2", "porkbun-axi dns update example.com 123 --type A --content 192.0.2.2 --confirm"], async (p) => {
+export const dnsUpdate = command("dns update", "Replace a DNS record by ID", [["domain", "domain name"], ["id", "record ID"]], [...recordFlags.map((f) => f.name === "name" ? { ...f, description: "required subdomain to write; pass --name '' to target the zone apex" } : f), confirmFlag], ["porkbun-axi dns update example.com 123 --type A --name www --content 192.0.2.2", "porkbun-axi dns update example.com 123 --type A --name www --content 192.0.2.2 --confirm"], async (p) => {
+  if (p.flags.name === undefined) throw new UsageError("--name is required for dns update", "pass --name with the record's subdomain; the zone apex must be targeted explicitly with --name ''");
   const body = recordBody(p);
   gate(p, `replace DNS record ${p.positionals[1]} on ${p.positionals[0]} with ${JSON.stringify(stable(body))}`);
   output(await request<Data>(`/dns/edit/${encodePath(p.positionals[0]!)}/${encodePath(p.positionals[1]!)}`, { method: "POST", body, idempotent: true }), p);

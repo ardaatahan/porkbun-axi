@@ -17,4 +17,5 @@ export const registry: Registry = {
 };
 
 const code = await dispatch(registry, process.argv.slice(2));
-process.exit(code);
+process.exitCode = code;
+process.stdout.write("", () => process.exit(code));

@@ -185,7 +185,7 @@ Unknown flags fail loudly and include the valid flag set. API errors include Por
 | Delete glue record | Prints the full host, then refuses | Deletes that glue record |
 | Replace glue record | Prints the full host and replacement IPs, then refuses | Replaces that glue record |
 
-All writes use a fresh `Idempotency-Key` header. A key starting with Porkbun's sandbox prefix can be used for credentialed smoke testing without real registry actions or charges. The automated test suite never makes live API calls.
+All writes use a fresh `Idempotency-Key` header. **`domains register --confirm` performs a real registration and spends real money.** This CLI has no sandbox mode; every command against a real API key acts on your real account. All automated testing in this repository uses mocked HTTP and never makes live API calls.
 
 ## Development
 

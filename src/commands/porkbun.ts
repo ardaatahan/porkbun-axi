@@ -17,7 +17,7 @@ function stable(value: unknown): unknown {
   return value;
 }
 
-function output(data: Data, parsed: Parsed, collection?: string, fields?: string[]): void {
+function output(data: Data, parsed: Parsed, collection?: string, fields: string[] = []): void {
   if (parsed.flags.json) {
     print(JSON.stringify(stable(data)));
     return;
@@ -29,8 +29,7 @@ function output(data: Data, parsed: Parsed, collection?: string, fields?: string
       return;
     }
     const normalized: Data[] = rows.map((row) => row && typeof row === "object" ? row as Data : { value: row });
-    const selected = fields ?? Object.keys(normalized[0] ?? {}).filter((key) => typeof normalized[0]?.[key] !== "object");
-    print(emitList(collection, normalized, selected));
+    print(emitList(collection, normalized, fields));
     return;
   }
   const entries = Object.entries(data).filter(([key]) => key !== "status").map(([key, value]) => [key, typeof value === "object" ? JSON.stringify(stable(value)) : value] as [string, unknown]);
